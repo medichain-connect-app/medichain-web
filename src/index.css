@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+  body { overflow-x: hidden; }
+  input, select, textarea { @apply outline-none; }
+  ::selection { @apply bg-primary/20 text-primary-darker; }
+}
+
+@layer components {
+  /* Glass effects */
+  .glass {
+    @apply bg-white/80 backdrop-blur-2xl border border-white/30 shadow-sm;
+  }
+  .glass-dark {
+    @apply bg-white/[0.06] backdrop-blur-2xl border border-white/[0.08];
+  }
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-xl border border-white/40 shadow-card;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-semibold rounded-2xl
+           shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:bg-primary-dark
+           active:scale-[0.97] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-tint text-primary font-semibold rounded-2xl
+           hover:bg-blue-100 active:scale-[0.97] transition-all duration-300;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-txt-secondary font-medium rounded-xl
+           hover:bg-surface-alt active:scale-[0.97] transition-all duration-300;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-red-50 text-accent-red font-semibold rounded-2xl
+           hover:bg-red-100 active:scale-[0.97] transition-all duration-300;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-primary text-primary font-semibold rounded-2xl
+           hover:bg-primary hover:text-white active:scale-[0.97] transition-all duration-300;
+  }
+  .btn-white {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-primary font-semibold rounded-2xl
+           shadow-lg hover:shadow-xl active:scale-[0.97] transition-all duration-300;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-2xl border border-border p-5 shadow-card hover:shadow-card-hover transition-all duration-500;
+  }
+  .card-glass {
+    @apply bg-white/70 backdrop-blur-xl rounded-2xl border border-white/40 p-5 shadow-card hover:shadow-card-hover transition-all duration-500;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full px-4 py-3 bg-surface border border-border rounded-xl text-sm font-medium text-txt-primary
+           placeholder:text-txt-tertiary focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full;
+  }
+  .badge-primary { @apply bg-primary-tint text-primary; }
+  .badge-gray { @apply bg-gray-100 text-txt-secondary; }
+  .badge-success { @apply bg-emerald-50 text-emerald-600; }
+  .badge-danger { @apply bg-red-50 text-accent-red; }
+  .badge-warning { @apply bg-amber-50 text-amber-600; }
+  .badge-violet { @apply bg-violet-50 text-accent-violet; }
+
+  /* Labels */
+  .label-text {
+    @apply text-xs font-semibold text-txt-tertiary uppercase tracking-wider;
+  }
+
+  /* Tabs */
+  .tab {
+    @apply px-4 py-2.5 text-sm font-semibold text-txt-secondary rounded-xl cursor-pointer transition-all duration-300
+           hover:text-txt-primary hover:bg-surface;
+  }
+  .tab.active {
+    @apply text-primary bg-primary-tint shadow-sm;
+  }
+
+  /* Spinners */
+  .spinner {
+    @apply w-8 h-8 border-3 border-border border-t-primary rounded-full animate-spin;
+  }
+  .spinner-sm {
+    @apply w-5 h-5 border-2;
+  }
+
+  /* Section dividers */
+  .section-heading {
+    @apply text-xs font-bold text-txt-tertiary uppercase tracking-[0.15em];
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary via-accent-violet to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .border-3 { border-width: 3px; }
+  .text-balance { text-wrap: balance; }
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
