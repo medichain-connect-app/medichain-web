@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { listMyRecords, downloadRecord, deleteRecord } from '../../services/recordsService'
 import { useToast } from '../../components/Toast'
+import AccessLogModal from '../../components/AccessLogModal'
 import { RECORD_CATEGORIES } from '../../data/constants'
-import { FileText, Download, Trash2, Upload, File, Image, FileSpreadsheet, Filter, Loader, Shield } from 'lucide-react'
+import { FileText, Download, Trash2, Upload, File, Image, FileSpreadsheet, Filter, Loader, Shield, History } from 'lucide-react'
 
 function fileIcon(mime) {
   if (!mime) return File
@@ -26,6 +27,7 @@ export default function RecordsPage() {
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(null)
   const [filter, setFilter] = useState('All')
+  const [historyFor, setHistoryFor] = useState(null)
   const toast = useToast()
 
   useEffect(() => {
@@ -117,6 +119,11 @@ export default function RecordsPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <motion.button whileTap={{ scale: 0.9 }} onClick={() => setHistoryFor(record)}
+                      title="Access history" aria-label={`Access history for ${record.title}`}
+                      className="w-9 h-9 rounded-xl bg-surface text-txt-secondary flex items-center justify-center hover:bg-primary-tint hover:text-primary transition-all duration-300">
+                      <History size={14} />
+                    </motion.button>
                     <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleDownload(record)}
                       disabled={downloading === record.id}
                       className="w-9 h-9 rounded-xl bg-primary-tint text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300">
@@ -133,6 +140,8 @@ export default function RecordsPage() {
           </AnimatePresence>
         </div>
       )}
+
+      {historyFor && <AccessLogModal record={historyFor} onClose={() => setHistoryFor(null)} />}
     </div>
   )
 }
