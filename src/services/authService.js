@@ -8,6 +8,10 @@ export async function login({ email, password }) {
   return api.post('/api/auth/login', { email, password })
 }
 
+export async function resendVerification(email) {
+  return api.post('/api/auth/resend-verification', { email })
+}
+
 export async function googleSignIn(idToken) {
   return api.post('/api/auth/google', { idToken })
 }

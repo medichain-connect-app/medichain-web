@@ -4,23 +4,30 @@ import { motion } from 'framer-motion'
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/Toast'
-import { Mail, Lock, LogIn, Shield, Heart, Activity, ArrowRight } from 'lucide-react'
+import { ResendVerificationButton } from '../../components/VerifyEmailNotice'
+import { Mail, Lock, LogIn, Shield, Heart, Activity, ArrowRight, MailWarning } from 'lucide-react'
 
 export default function LoginPage() {
-  const { signIn, googleSignIn } = useAuth()
+  const { signIn, googleSignIn, authLinkError, clearAuthLinkError } = useAuth()
   const toast = useToast()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [unverifiedEmail, setUnverifiedEmail] = useState(null)
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!email || !password) { toast.error('Fill in all fields'); return }
     setLoading(true)
+    setUnverifiedEmail(null)
     try {
       await signIn({ email, password })
       toast.success('Welcome back!')
     } catch (err) {
+      if (/not confirmed|not verified/i.test(err.message || '')) {
+        setUnverifiedEmail(email)
+        return
+      }
       toast.error(err.message || 'Login failed')
     } finally {
       setLoading(false)
@@ -100,6 +107,29 @@ export default function LoginPage() {
           </div>
           <h2 className="text-3xl font-extrabold text-txt-primary">Welcome back</h2>
           <p className="text-txt-secondary mt-2 mb-8">Sign in to access your records</p>
+
+          {authLinkError && (
+            <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              <p className="font-semibold">That verification link didn't work</p>
+              <p className="mt-1 text-red-600/80">{authLinkError} Sign in below to get a new link.</p>
+              <button type="button" onClick={clearAuthLinkError} className="mt-2 text-xs font-semibold underline">Dismiss</button>
+            </div>
+          )}
+
+          {unverifiedEmail && (
+            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-start gap-3">
+                <MailWarning size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-semibold text-amber-800">Please verify your email first</p>
+                  <p className="mt-1 text-amber-700/90">
+                    We sent a link to <span className="font-semibold break-all">{unverifiedEmail}</span>. Click it, then sign in again.
+                  </p>
+                </div>
+              </div>
+              <ResendVerificationButton email={unverifiedEmail} className="mt-4 !bg-white" />
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

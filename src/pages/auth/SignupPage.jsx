@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/Toast'
+import VerifyEmailNotice from '../../components/VerifyEmailNotice'
 import { Mail, Lock, User, UserPlus, Stethoscope, Heart, Shield, ArrowRight } from 'lucide-react'
 
 export default function SignupPage() {
@@ -14,6 +15,7 @@ export default function SignupPage() {
 
   const [form, setForm] = useState({ fullName: '', email: '', password: '', role: '' })
   const [loading, setLoading] = useState(false)
+  const [pendingEmail, setPendingEmail] = useState(null)
 
   function set(field) {
     return (e) => setForm(prev => ({ ...prev, [field]: typeof e === 'string' ? e : e.target.value }))
@@ -37,13 +39,16 @@ export default function SignupPage() {
     }
 
     if (!form.fullName || !form.email || !form.password) { toast.error('Fill in all fields'); return }
-    if (form.password.length < 6) { toast.error('Password must be at least 6 characters'); return }
+    if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/\d/.test(form.password)) {
+      toast.error('Password must be at least 8 characters and include a letter and a number')
+      return
+    }
 
     setLoading(true)
     try {
       const data = await signUp({ email: form.email, password: form.password, fullName: form.fullName, role: form.role })
       if (data.needsEmailConfirmation) {
-        toast.info('Check your email to verify your account')
+        setPendingEmail(form.email)
       } else {
         toast.success('Account created!')
       }
@@ -109,6 +114,9 @@ export default function SignupPage() {
           <div className="lg:hidden mb-6">
             <img src="/logo.png" alt="MediChain" className="h-8" />
           </div>
+          {pendingEmail ? (
+            <VerifyEmailNotice email={pendingEmail} onBack={() => setPendingEmail(null)} />
+          ) : (<>
           <h2 className="text-3xl font-extrabold text-txt-primary">
             {isGoogleFlow ? 'Complete Setup' : 'Create Account'}
           </h2>
@@ -166,7 +174,7 @@ export default function SignupPage() {
                   <label className="label-text">Password</label>
                   <div className="mt-1.5 relative">
                     <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-txt-tertiary" />
-                    <input type="password" className="input pl-11" placeholder="Min 6 characters" value={form.password} onChange={set('password')} />
+                    <input type="password" className="input pl-11" placeholder="8+ characters, letters & numbers" value={form.password} onChange={set('password')} />
                   </div>
                 </div>
               </>
@@ -210,6 +218,7 @@ export default function SignupPage() {
               <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
             </p>
           </div>
+          </>)}
         </motion.div>
       </div>
     </div>

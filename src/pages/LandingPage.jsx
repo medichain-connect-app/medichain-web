@@ -3,7 +3,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
 import Footer from '../components/Footer'
 import {
-  Shield, Lock, Share2, FileText, Users, Zap, ArrowRight,
+  Shield, Lock, Share2, Upload, Zap, ArrowRight,
   CheckCircle, Globe, Heart, Activity, Eye, Smartphone
 } from 'lucide-react'
 
@@ -11,6 +11,15 @@ const fadeUp = {
   hidden: { opacity: 0, y: 40 },
   visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] } }),
 }
+
+// Flat line with three heartbeat spikes, drawn on a 1440x200 canvas
+const ECG_PATH = [
+  'M0 100 H300',
+  'l20 -8 l15 8 h25 l12 18 l18 -95 l18 125 l14 -48 h30 l25 -12 l20 12',
+  'H780',
+  'l20 -8 l15 8 h25 l12 18 l18 -95 l18 125 l14 -48 h30 l25 -12 l20 12',
+  'H1260 l12 -6 l12 6 H1440',
+].join(' ')
 
 export default function LandingPage() {
   const heroRef = useRef(null)
@@ -38,38 +47,82 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-mesh pt-16">
-        {/* Parallax orbs */}
-        <motion.div style={{ y: orb1Y }} className="absolute w-[500px] h-[500px] rounded-full bg-gradient-radial from-primary/[0.07] to-transparent -top-40 -left-40 blur-3xl" />
-        <motion.div style={{ y: orb2Y }} className="absolute w-[600px] h-[600px] rounded-full bg-gradient-radial from-accent-violet/[0.06] to-transparent -bottom-60 -right-40 blur-3xl" />
-        <motion.div style={{ y: orb3Y }} className="absolute w-[300px] h-[300px] rounded-full bg-gradient-radial from-accent-emerald/[0.06] to-transparent top-1/3 right-1/4 blur-2xl" />
+        {/* Grid pattern, faded out toward the edges */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(36,107,253,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(36,107,253,0.07)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_65%_55%_at_50%_45%,#000_20%,transparent_100%)]" />
 
-        {/* Floating shapes */}
-        <motion.div animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute top-32 left-[10%] w-16 h-16 rounded-2xl bg-primary/[0.06] border border-primary/[0.08] backdrop-blur-sm hidden lg:block" />
-        <motion.div animate={{ y: [0, 15, 0], rotate: [0, -3, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-          className="absolute bottom-40 right-[12%] w-20 h-20 rounded-3xl bg-accent-violet/[0.06] border border-accent-violet/[0.08] backdrop-blur-sm hidden lg:block" />
-        <motion.div animate={{ y: [0, -12, 0], scale: [1, 1.1, 1] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-          className="absolute top-1/2 left-[5%] w-12 h-12 rounded-full bg-accent-emerald/[0.08] border border-accent-emerald/[0.1] hidden lg:block" />
+        {/* Drifting aurora blobs (parallax on scroll) */}
+        <motion.div style={{ y: orb1Y }} className="absolute -top-32 left-[8%] w-[520px] h-[520px]">
+          <motion.div animate={{ x: [0, 60, -20, 0], y: [0, 40, 70, 0], scale: [1, 1.12, 0.95, 1] }}
+            transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-full h-full rounded-full bg-primary/[0.16] blur-[110px]" />
+        </motion.div>
+        <motion.div style={{ y: orb2Y }} className="absolute top-[18%] right-[4%] w-[480px] h-[480px]">
+          <motion.div animate={{ x: [0, -70, 10, 0], y: [0, 50, -30, 0], scale: [1, 0.92, 1.1, 1] }}
+            transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-full h-full rounded-full bg-accent-violet/[0.14] blur-[110px]" />
+        </motion.div>
+        <motion.div style={{ y: orb3Y }} className="absolute bottom-[-8%] left-[35%] w-[420px] h-[420px]">
+          <motion.div animate={{ x: [0, 50, -50, 0], y: [0, -30, 10, 0] }}
+            transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-full h-full rounded-full bg-accent-emerald/[0.10] blur-[100px]" />
+        </motion.div>
+
+        {/* Heartbeat line running across the hero */}
+        <svg viewBox="0 0 1440 200" preserveAspectRatio="none" aria-hidden="true"
+          className="absolute left-0 right-0 bottom-[3%] w-full h-[130px] [mask-image:linear-gradient(to_right,transparent,#000_15%,#000_85%,transparent)]">
+          <defs>
+            <linearGradient id="ecg-glow" x1="0" x2="1">
+              <stop offset="0%" stopColor="#246BFD" />
+              <stop offset="100%" stopColor="#8B5CF6" />
+            </linearGradient>
+          </defs>
+          <motion.path d={ECG_PATH} fill="none" stroke="#246BFD" strokeOpacity="0.12" strokeWidth="2"
+            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 2.4, ease: 'easeInOut' }} />
+          <motion.path d={ECG_PATH} fill="none" stroke="url(#ecg-glow)" strokeWidth="2.5" strokeLinecap="round"
+            style={{ filter: 'drop-shadow(0 0 6px rgba(36,107,253,0.6))' }}
+            initial={{ pathLength: 0.12, pathOffset: 0, opacity: 0 }}
+            animate={{ pathOffset: [0, 1], opacity: [0, 1, 1, 0] }}
+            transition={{ duration: 4.5, repeat: Infinity, repeatDelay: 0.8, ease: 'linear', delay: 2.4 }} />
+        </svg>
+
+        {/* Fade into the next section */}
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-white" />
 
         <motion.div style={{ y: heroY, opacity: heroOpacity }}
           className="relative z-10 max-w-4xl mx-auto text-center px-6 py-20">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-tint border border-primary/10 text-primary text-xs font-semibold mb-8">
+          <motion.div initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.6 }}
+            className="relative overflow-hidden inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 backdrop-blur-md border border-primary/15 shadow-sm text-primary text-xs font-semibold mb-8">
+            <span className="relative flex w-2 h-2">
+              <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-60" />
+              <span className="relative w-2 h-2 rounded-full bg-success" />
+            </span>
             <Shield size={12} /> End-to-End Encrypted Health Records
+            <motion.span aria-hidden="true" initial={{ x: '-120%' }} animate={{ x: '320%' }}
+              transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 3.5, ease: 'easeInOut', delay: 1 }}
+              className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/80 to-transparent skew-x-[-20deg]" />
           </motion.div>
 
-          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-txt-primary leading-[1.1] tracking-tight text-balance">
-            Your Health Data,{' '}
-            <span className="gradient-text">Secured Forever</span>
-          </motion.h1>
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-txt-primary leading-[1.1] tracking-tight text-balance">
+            {['Your', 'Health', 'Data,'].map((word, i) => (
+              <motion.span key={word} className="inline-block mr-[0.25em]"
+                initial={{ opacity: 0, y: 28, filter: 'blur(10px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 0.7, delay: 0.1 + i * 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}>
+                {word}
+              </motion.span>
+            ))}
+            <motion.span className="inline-block gradient-text"
+              initial={{ opacity: 0, y: 28, filter: 'blur(10px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              transition={{ duration: 0.8, delay: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}>
+              Secured Forever
+            </motion.span>
+          </h1>
 
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.7 }}
             className="mt-6 text-lg sm:text-xl text-txt-secondary max-w-2xl mx-auto leading-relaxed text-balance">
             MediChain encrypts your medical records with military-grade AES-256 encryption and stores them on decentralized IPFS. Share securely with doctors — on your terms.
           </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.85 }}
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/signup" className="btn-primary !px-8 !py-4 text-base shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30">
               Start Free <ArrowRight size={18} />
@@ -79,7 +132,7 @@ export default function LandingPage() {
             </Link>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}
             className="mt-12 flex items-center justify-center gap-8 text-txt-tertiary text-sm">
             {['No credit card', 'HIPAA Ready', 'Free for patients'].map((t, i) => (
               <span key={t} className="flex items-center gap-1.5">
@@ -96,6 +149,38 @@ export default function LandingPage() {
           {['AES-256-CBC Encryption', 'IPFS Decentralized Storage', 'Google OAuth', 'Zero-Knowledge Proof Ready'].map(t => (
             <span key={t} className="flex items-center gap-2"><Lock size={13} /> {t}</span>
           ))}
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-24 px-6 bg-surface border-b border-border">
+        <div className="max-w-6xl mx-auto">
+          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+            className="text-center mb-16">
+            <span className="section-heading text-primary">How It Works</span>
+            <h2 className="text-3xl sm:text-[2.6rem] leading-[1.12] font-extrabold tracking-[-0.025em] text-txt-primary mt-3 max-w-2xl mx-auto text-balance">
+              From paper file to private, shareable record in a minute
+            </h2>
+          </motion.div>
+
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6">
+            <div className="hidden md:block absolute top-8 left-[16.6%] right-[16.6%] h-px bg-[repeating-linear-gradient(to_right,#CBD5E1_0_6px,transparent_6px_12px)]" />
+            {[
+              { icon: Upload, title: 'Upload a record', desc: 'Add a prescription, lab report or scan from your phone or computer.' },
+              { icon: Lock, title: 'It gets encrypted', desc: 'The file is encrypted with AES-256 and stored on IPFS, so it can’t be read or quietly altered.' },
+              { icon: Share2, title: 'Share it, or don’t', desc: 'Pick the exact records a doctor can see. Change your mind later and revoke access instantly.' },
+            ].map(({ icon: Icon, title, desc }, i) => (
+              <motion.div key={title} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+                className="relative text-center px-4">
+                <div className="relative mx-auto w-16 h-16 rounded-2xl bg-white border border-border shadow-card flex items-center justify-center">
+                  <Icon size={24} className="text-primary" />
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center ring-4 ring-surface">{i + 1}</span>
+                </div>
+                <h3 className="mt-6 text-lg font-bold text-txt-primary">{title}</h3>
+                <p className="mt-2 text-sm text-txt-secondary leading-relaxed max-w-xs mx-auto">{desc}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -129,37 +214,6 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-lg font-bold text-txt-primary">{title}</h3>
                 <p className="text-sm text-txt-secondary mt-2 leading-relaxed">{desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="py-24 px-6 bg-surface">
-        <div className="max-w-5xl mx-auto">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-            className="text-center mb-16">
-            <span className="section-heading text-primary">How It Works</span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-txt-primary mt-3">Three simple steps</h2>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { step: '01', title: 'Upload Records', desc: 'Upload any medical document — prescriptions, lab reports, imaging. We encrypt it instantly.', icon: FileText },
-              { step: '02', title: 'Connect with Doctors', desc: 'Find verified doctors by specialty and location. Send connection requests securely.', icon: Users },
-              { step: '03', title: 'Share Selectively', desc: 'Choose exactly which records to share with which doctor. Revoke anytime.', icon: Shield },
-            ].map(({ step, title, desc, icon: Icon }, i) => (
-              <motion.div key={step} custom={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-                className="relative text-center">
-                <div className="text-7xl font-extrabold text-primary/[0.06] absolute -top-4 left-1/2 -translate-x-1/2 select-none">{step}</div>
-                <div className="relative pt-8">
-                  <div className="w-16 h-16 rounded-3xl bg-white border border-border shadow-card flex items-center justify-center mx-auto mb-5">
-                    <Icon size={28} className="text-primary" />
-                  </div>
-                  <h3 className="text-lg font-bold text-txt-primary">{title}</h3>
-                  <p className="text-sm text-txt-secondary mt-2 leading-relaxed max-w-xs mx-auto">{desc}</p>
-                </div>
               </motion.div>
             ))}
           </div>
