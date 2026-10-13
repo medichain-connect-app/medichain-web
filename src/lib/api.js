@@ -50,8 +50,11 @@ export const api = {
   },
   download: async (path) => {
     const url = `${BASE}${path}`
-    const res = await fetch(url, { headers: authHeaders() })
-    if (!res.ok) throw new Error('Download failed')
+    const res = await fetch(url, { headers: authHeaders(), cache: 'no-store' })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.error || 'Download failed')
+    }
     return res.blob()
   },
 }

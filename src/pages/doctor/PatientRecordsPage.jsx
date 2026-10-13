@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { getRecordsSharedWithMe } from '../../services/sharingService'
-import { downloadRecord } from '../../services/recordsService'
 import { useToast } from '../../components/Toast'
-import { ArrowLeft, FileText, Download, Loader, FolderOpen, Shield } from 'lucide-react'
+import { ArrowLeft, FileText, Eye, FolderOpen, Shield, Lock } from 'lucide-react'
+
+// pdf.js is large; only load the viewer when a record is opened.
+const SecureRecordViewer = lazy(() => import('../../components/SecureRecordViewer'))
 
 const fadeUp = { hidden: { opacity: 0, y: 15 }, visible: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.05 } }) }
 
@@ -12,7 +14,8 @@ export default function PatientRecordsPage() {
   const { patientId } = useParams()
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
-  const [downloading, setDownloading] = useState(null)
+  const [viewing, setViewing] = useState(null)
+  const closeViewer = useCallback(() => setViewing(null), [])
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -22,26 +25,6 @@ export default function PatientRecordsPage() {
       .catch(() => toast.error('Failed to load records'))
       .finally(() => setLoading(false))
   }, [patientId])
-
-  async function handleDownload(rec) {
-    setDownloading(rec.id)
-    try {
-      const blob = await downloadRecord(rec.id)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = rec.title || 'record'
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      URL.revokeObjectURL(url)
-      toast.success('Downloaded!')
-    } catch {
-      toast.error('Download failed')
-    } finally {
-      setDownloading(null)
-    }
-  }
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center"><div className="spinner" /></div>
 
@@ -56,6 +39,11 @@ export default function PatientRecordsPage() {
         <p className="text-sm text-txt-secondary mb-6 flex items-center gap-1.5">
           <Shield size={12} className="text-success" /> {records.length} encrypted record{records.length !== 1 ? 's' : ''} shared
         </p>
+        {records.length > 0 && (
+          <p className="text-xs text-txt-tertiary -mt-4 mb-6 flex items-center gap-1.5">
+            <Lock size={11} /> Records open in a secure, view-only viewer. Each view is recorded on the blockchain.
+          </p>
+        )}
       </motion.div>
 
       {records.length === 0 ? (
@@ -81,14 +69,20 @@ export default function PatientRecordsPage() {
                   {rec.shared_at && <span className="text-[10px] text-txt-tertiary">{new Date(rec.shared_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
                 </div>
               </div>
-              <motion.button whileTap={{ scale: 0.85 }} onClick={() => handleDownload(rec)}
-                disabled={downloading === rec.id}
-                className="w-10 h-10 rounded-xl bg-primary-tint text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300 flex-shrink-0">
-                {downloading === rec.id ? <Loader size={16} className="animate-spin" /> : <Download size={16} />}
+              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setViewing(rec)}
+                aria-label={`View ${rec.title}`}
+                className="inline-flex items-center gap-1.5 px-4 h-10 rounded-xl bg-primary-tint text-primary text-sm font-semibold hover:bg-primary hover:text-white transition-all duration-300 flex-shrink-0">
+                <Eye size={16} /> View
               </motion.button>
             </motion.div>
           ))}
         </div>
+      )}
+
+      {viewing && (
+        <Suspense fallback={<div className="fixed inset-0 z-50 bg-txt-primary/90 flex items-center justify-center"><div className="spinner" /></div>}>
+          <SecureRecordViewer record={viewing} onClose={closeViewer} />
+        </Suspense>
       )}
     </div>
   )
