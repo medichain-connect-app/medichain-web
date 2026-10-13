@@ -115,7 +115,10 @@ export default function PatientDashboard() {
       {doctors.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-txt-primary">Your Doctors</h2>
+            <div>
+              <h2 className="text-lg font-bold text-txt-primary">Connected doctors</h2>
+              <p className="text-xs text-txt-secondary mt-0.5">Doctors you're connected with. Record access is shown above.</p>
+            </div>
             <Link to="/patient/find-doctors?tab=my" className="text-sm text-primary font-semibold flex items-center gap-1 hover:gap-2 transition-all">
               See all <ArrowRight size={14} />
             </Link>
