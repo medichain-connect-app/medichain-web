@@ -76,7 +76,7 @@ export default function PatientDashboard() {
         ].map(({ to, icon: Icon, label, gradient, shadow }, i) => (
           <motion.div key={to} custom={i} variants={fadeUp} initial="hidden" animate="visible">
             <Link to={to} className="card flex flex-col items-center gap-3 py-6 group">
-              <div className={`w-13 h-13 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg ${shadow} group-hover:scale-110 group-hover:shadow-xl transition-all duration-500`}>
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg ${shadow} group-hover:scale-110 group-hover:shadow-xl transition-all duration-500`}>
                 <Icon size={22} className="text-white" />
               </div>
               <span className="text-sm font-bold text-txt-primary">{label}</span>
