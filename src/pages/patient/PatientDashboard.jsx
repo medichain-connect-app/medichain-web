@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../../contexts/AuthContext'
 import { getMyStats } from '../../services/profileService'
 import { getMyAcceptedDoctors } from '../../services/doctorRequestService'
+import SharedAccessPanel from '../../components/SharedAccessPanel'
 import {
   Upload, FileText, Share2, Shield, Users, Heart, Stethoscope,
   Brain, Eye, Baby, Activity, ArrowRight, Sparkles
@@ -83,6 +84,8 @@ export default function PatientDashboard() {
           </motion.div>
         ))}
       </div>
+
+      <SharedAccessPanel />
 
       {/* Specialties */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-8">

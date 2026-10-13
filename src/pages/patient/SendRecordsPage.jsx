@@ -5,7 +5,8 @@ import { getDoctor } from '../../services/doctorService'
 import { listMyRecords } from '../../services/recordsService'
 import { shareRecords, getSharedRecordIds } from '../../services/sharingService'
 import { useToast } from '../../components/Toast'
-import { ArrowLeft, Share2, FileText, CheckCircle, Check, Shield, Lock } from 'lucide-react'
+import { ACCESS_DURATIONS, DEFAULT_ACCESS_DURATION, expiryFor } from '../../lib/accessTime'
+import { ArrowLeft, Share2, FileText, CheckCircle, Check, Shield, Lock, Clock } from 'lucide-react'
 
 export default function SendRecordsPage() {
   const { doctorId } = useParams()
@@ -16,6 +17,7 @@ export default function SendRecordsPage() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(false)
+  const [duration, setDuration] = useState(DEFAULT_ACCESS_DURATION)
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -39,7 +41,7 @@ export default function SendRecordsPage() {
     if (selected.size === 0) { toast.error('Select at least one record'); return }
     setSending(true)
     try {
-      await shareRecords({ recordIds: [...selected], doctorId })
+      await shareRecords({ recordIds: [...selected], doctorId, expiresAt: expiryFor(duration) })
       setDone(true)
       toast.success(`${selected.size} record(s) shared!`)
     } catch (err) {
@@ -63,7 +65,10 @@ export default function SendRecordsPage() {
         <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="text-2xl font-extrabold text-txt-primary">Records Shared!</motion.h2>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-          className="text-txt-secondary mt-2">{selected.size} record(s) securely shared with Dr. {doctor?.name}.</motion.p>
+          className="text-txt-secondary mt-2">
+          {selected.size} record(s) securely shared with Dr. {doctor?.name}
+          {duration === 'never' ? '.' : ` for ${ACCESS_DURATIONS.find(d => d.value === duration)?.label}.`}
+        </motion.p>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
           className="flex items-center justify-center gap-2 mt-3 text-[11px] text-txt-tertiary">
           <Lock size={10} className="text-success" /> Encrypted with AES-256
@@ -150,6 +155,27 @@ export default function SendRecordsPage() {
               </motion.label>
             ))}
           </div>
+
+          <fieldset className="mt-6">
+            <legend className="label-text flex items-center gap-1.5 mb-2"><Clock size={12} /> Access duration</legend>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {ACCESS_DURATIONS.map(d => (
+                <label key={d.value}
+                  className={`text-center text-sm font-semibold px-3 py-2.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                    duration === d.value ? 'border-primary bg-primary-tint text-primary' : 'border-border text-txt-secondary hover:border-primary/30'
+                  }`}>
+                  <input type="radio" name="duration" value={d.value} checked={duration === d.value}
+                    onChange={() => setDuration(d.value)} className="sr-only" />
+                  {d.label}
+                </label>
+              ))}
+            </div>
+            <p className="text-[11px] text-txt-tertiary mt-2">
+              {duration === 'never'
+                ? 'The doctor keeps access until you revoke it from your dashboard.'
+                : 'Access ends automatically. You can also revoke it any time from your dashboard.'}
+            </p>
+          </fieldset>
 
           <motion.button onClick={handleSend} disabled={sending || selected.size === 0}
             className="btn-primary w-full py-3.5 text-base mt-6" whileTap={{ scale: 0.98 }}>
