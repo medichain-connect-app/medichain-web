@@ -7,14 +7,42 @@ export const ACCESS_DURATIONS = [
   { value: '7d', label: '7 days', ms: 7 * DAY },
   { value: '30d', label: '30 days', ms: 30 * DAY },
   { value: 'never', label: 'No expiry', ms: null },
+  { value: 'custom', label: 'Custom', ms: undefined },
 ]
 
 export const DEFAULT_ACCESS_DURATION = '7d'
 
-/** ISO expiry for a duration value, or null for no expiry. */
-export function expiryFor(value, now = Date.now()) {
+/**
+ * ISO expiry for a duration value, or null for no expiry. For 'custom', pass the
+ * <input type="datetime-local"> value (local time, "YYYY-MM-DDTHH:mm").
+ */
+export function expiryFor(value, now = Date.now(), customLocal = '') {
+  if (value === 'custom') return customLocal ? new Date(customLocal).toISOString() : null
   const duration = ACCESS_DURATIONS.find(d => d.value === value)
   return duration && duration.ms ? new Date(now + duration.ms).toISOString() : null
+}
+
+/** "YYYY-MM-DDTHH:mm" in local time — the format datetime-local inputs use. */
+export function toLocalInputValue(date) {
+  const pad = n => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+/** Earliest selectable custom expiry: the start of the next minute. */
+export function earliestCustomExpiry(now = Date.now()) {
+  const next = new Date(now)
+  next.setSeconds(0, 0)
+  next.setMinutes(next.getMinutes() + 1)
+  return next
+}
+
+/** Error message for a custom expiry, or null if it is valid (strictly in the future). */
+export function customExpiryError(customLocal, now = Date.now()) {
+  if (!customLocal) return 'Pick a date and time'
+  const at = new Date(customLocal).getTime()
+  if (Number.isNaN(at)) return 'Pick a valid date and time'
+  if (at <= now) return 'Pick a date and time later than now'
+  return null
 }
 
 /**
