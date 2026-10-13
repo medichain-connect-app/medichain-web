@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ShieldCheck, ShieldOff, Eye, Download, Link2, ExternalLink, History, Clock } from 'lucide-react'
+import { X, ShieldCheck, ShieldOff, Eye, Download, Link2, ExternalLink, History, Clock, Timer } from 'lucide-react'
 import { getAccessLog, getChainInfo } from '../services/blockchainService'
 
 const ACTIONS = {
@@ -12,6 +12,14 @@ const ACTIONS = {
 }
 
 const DATE_FORMAT = { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }
+
+function formatDuration(seconds) {
+  if (seconds < 60) return `${seconds}s`
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  return h ? `${h}h ${m}m` : `${m}m ${String(s).padStart(2, '0')}s`
+}
 
 function shortAddress(address) {
   return address ? `${address.slice(0, 6)}…${address.slice(-4)}` : ''
@@ -99,6 +107,12 @@ export default function AccessLogModal({ record, onClose }) {
                             {e.doctorName ? `Dr. ${e.doctorName.replace(/^Dr\.?\s*/i, '')}` : shortAddress(e.doctorAddress)}
                           </span>
                         </p>
+                        {e.action === 'viewed' && typeof e.viewSeconds === 'number' && (
+                          <p className="text-[11px] text-txt-secondary mt-0.5 flex items-center gap-1">
+                            <Timer size={11} /> Looked at it for {formatDuration(e.viewSeconds)}
+                            {e.viewOngoing && <span className="ml-1 inline-flex items-center gap-1 font-semibold text-emerald-600"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> viewing now</span>}
+                          </p>
+                        )}
                         {e.action === 'granted' && (
                           <p className="text-[11px] text-txt-secondary mt-0.5">
                             {e.expiresAt ? `Until ${new Date(e.expiresAt).toLocaleString('en-IN', DATE_FORMAT)}` : 'No expiry'}
@@ -109,7 +123,9 @@ export default function AccessLogModal({ record, onClose }) {
                           {' · '}
                           {e.blockNumber != null
                             ? `block ${e.blockNumber.toLocaleString('en-IN')}`
-                            : 'ended automatically, as set when shared'}
+                            : e.action === 'expired'
+                              ? 'ended automatically, as set when shared'
+                              : 'recorded by MediChain, not yet on the blockchain'}
                         </p>
                       </div>
                     </li>

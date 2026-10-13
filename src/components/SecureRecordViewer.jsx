@@ -2,13 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import * as pdfjsLib from 'pdfjs-dist'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
-import { X, Lock, EyeOff, ShieldAlert, Link2 } from 'lucide-react'
-import { viewRecord } from '../services/recordsService'
+import { X, Lock, EyeOff, ShieldAlert, Link2, Timer } from 'lucide-react'
+import { viewRecord, startViewSession, sendViewHeartbeat } from '../services/recordsService'
 import { useAuth } from '../contexts/AuthContext'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
 
 const BLOCKED_SHORTCUTS = new Set(['s', 'p', 'c', 'a', 'u', 'x'])
+const HEARTBEAT_MS = 15000
+
+function formatDuration(seconds) {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return m ? `${m}m ${String(s).padStart(2, '0')}s` : `${s}s`
+}
 
 /**
  * View-only viewer for a record shared with a doctor.
@@ -21,6 +28,10 @@ const BLOCKED_SHORTCUTS = new Set(['s', 'p', 'c', 'a', 'u', 'x'])
  *
  * A web page cannot fully prevent screenshots (OS tools, a phone camera), so
  * the watermark makes any copy traceable to the doctor who made it.
+ *
+ * Viewing time is timed by the server from heartbeats sent while the record
+ * is on screen; time spent hidden isn't counted. If the share is revoked or
+ * expires mid-view, the record is wiped from the screen.
  */
 export default function SecureRecordViewer({ record, onClose }) {
   const { user } = useAuth()
@@ -28,6 +39,9 @@ export default function SecureRecordViewer({ record, onClose }) {
   const [status, setStatus] = useState('loading') // loading | ready | unsupported | error
   const [error, setError] = useState(null)
   const [hidden, setHidden] = useState(false)
+  const [viewSeconds, setViewSeconds] = useState(0)
+  const hiddenRef = useRef(false)
+  const beatRef = useRef(null)
 
   const watermark = `${user?.full_name ? `Dr. ${user.full_name.replace(/^Dr\.?\s*/i, '')}` : user?.email || 'MediChain'} · ${user?.email || ''} · ${new Date().toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })} · MediChain confidential`
 
@@ -84,6 +98,52 @@ export default function SecureRecordViewer({ record, onClose }) {
       if (container) container.innerHTML = ''
     }
   }, [record.id])
+
+  // Time the view: start a session once the record is on screen, report every
+  // 15s while it is visible, and close it when the viewer closes.
+  useEffect(() => {
+    if (status !== 'ready') return
+    let sessionId = null
+    let finished = false
+    const container = pagesRef.current
+
+    async function beat({ visible, end = false }) {
+      if (!sessionId || finished) return
+      if (end) finished = true
+      try {
+        const r = await sendViewHeartbeat(record.id, sessionId, { visible, end })
+        if (r && typeof r.activeSeconds === 'number') setViewSeconds(r.activeSeconds)
+        if (r?.accessEnded && !end) {
+          finished = true
+          container?.querySelectorAll('canvas').forEach(c => { c.width = 0; c.height = 0 })
+          if (container) container.innerHTML = ''
+          setError('Your access to this record has ended.')
+          setStatus('error')
+        }
+      } catch { /* timing is best-effort; never interrupt viewing */ }
+    }
+    beatRef.current = beat
+
+    startViewSession(record.id).then(r => { sessionId = r?.sessionId }).catch(() => {})
+    const interval = setInterval(() => beat({ visible: !hiddenRef.current && !document.hidden }), HEARTBEAT_MS)
+    const onPageHide = () => beat({ visible: !hiddenRef.current, end: true })
+    window.addEventListener('pagehide', onPageHide)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('pagehide', onPageHide)
+      beat({ visible: !hiddenRef.current, end: true })
+      beatRef.current = null
+    }
+  }, [status, record.id])
+
+  // Credit visible time right up to the moment the record is hidden, and
+  // don't count the hidden stretch once it's shown again.
+  useEffect(() => {
+    if (hiddenRef.current === hidden) return
+    hiddenRef.current = hidden
+    beatRef.current?.({ visible: hidden })
+  }, [hidden])
 
   // Block save / print / copy shortcuts, Print Screen, and printing.
   useEffect(() => {
@@ -175,8 +235,11 @@ export default function SecureRecordViewer({ record, onClose }) {
         )}
       </div>
 
-      <footer className="px-4 py-2 text-center text-[11px] text-white/50 bg-txt-primary border-t border-white/10 flex items-center justify-center gap-1.5">
-        <Link2 size={11} /> Watermarked with your name and the time. Copies can be traced to this view.
+      <footer className="px-4 py-2 text-[11px] text-white/50 bg-txt-primary border-t border-white/10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+        <span className="flex items-center gap-1.5"><Link2 size={11} /> Watermarked with your name and the time. Copies can be traced to this view.</span>
+        {status === 'ready' && (
+          <span className="flex items-center gap-1.5" aria-live="off"><Timer size={11} /> Viewing time recorded: {formatDuration(viewSeconds)}</span>
+        )}
       </footer>
     </motion.div>
   )
