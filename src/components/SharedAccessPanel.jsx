@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { getMyShares, revokeShare } from '../services/sharingService'
 import { useToast } from './Toast'
 import { remainingAccess } from '../lib/accessTime'
-import { FileText, Clock, ShieldOff, ShieldCheck, Loader, Share2, ArrowRight, X, ChevronDown } from 'lucide-react'
+import { FileText, Clock, ShieldOff, ShieldCheck, Loader, Share2, ArrowRight, History } from 'lucide-react'
 
 const LEVEL_STYLES = {
   none: 'bg-surface text-txt-secondary',
@@ -18,12 +18,12 @@ const isExpired = (share, now) => !!share.expiresAt && new Date(share.expiresAt)
 
 /**
  * Patient dashboard: which doctors can see which records right now, how long
- * for, and revoke. Shares move to "Expired access" the moment they run out.
+ * for, and revoke. A share drops off the moment it expires — access has already
+ * ended, and the record's access history shows when.
  */
 export default function SharedAccessPanel() {
   const [shares, setShares] = useState(null)
   const [busy, setBusy] = useState(null)
-  const [showExpired, setShowExpired] = useState(false)
   const [now, setNow] = useState(Date.now())
   const toast = useToast()
 
@@ -31,17 +31,16 @@ export default function SharedAccessPanel() {
     getMyShares().then(setShares).catch(() => setShares([]))
   }, [])
 
-  // Keep countdowns current and move shares to "expired" as they run out.
+  // Keep countdowns current and drop shares as they run out.
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 15000)
     return () => clearInterval(id)
   }, [])
 
-  const { activeByDoctor, expired } = useMemo(() => {
+  const activeByDoctor = useMemo(() => {
     const groups = new Map()
-    const expiredList = []
     for (const s of shares || []) {
-      if (isExpired(s, now)) { expiredList.push(s); continue }
+      if (isExpired(s, now)) continue
       if (!groups.has(s.doctorId)) {
         groups.set(s.doctorId, {
           doctorId: s.doctorId,
@@ -53,8 +52,7 @@ export default function SharedAccessPanel() {
       }
       groups.get(s.doctorId).items.push(s)
     }
-    expiredList.sort((a, b) => new Date(b.expiresAt) - new Date(a.expiresAt))
-    return { activeByDoctor: [...groups.values()], expired: expiredList }
+    return [...groups.values()]
   }, [shares, now])
 
   const activeCount = activeByDoctor.reduce((n, g) => n + g.items.length, 0)
@@ -62,20 +60,11 @@ export default function SharedAccessPanel() {
   async function handleRevoke(share) {
     const doctor = share.doctorName ? `Dr. ${share.doctorName}` : 'this doctor'
     if (!confirm(`Stop sharing "${share.recordTitle}" with ${doctor}? They will lose access right away.`)) return
-    await remove(share, `Access revoked for ${doctor}`)
-  }
-
-  // Clearing an expired share marks it revoked, so it leaves this list for good.
-  async function handleClear(share) {
-    await remove(share, 'Removed from the list')
-  }
-
-  async function remove(share, successMessage) {
     setBusy(share.id)
     try {
       await revokeShare(share.recordId, share.doctorId)
       setShares(prev => prev.filter(s => s.id !== share.id))
-      toast.success(successMessage)
+      toast.success(`Access revoked for ${doctor}`)
     } catch (err) {
       toast.error(err.message || 'Something went wrong')
     } finally {
@@ -167,50 +156,9 @@ export default function SharedAccessPanel() {
             </div>
           )}
 
-          {expired.length > 0 && (
-            <div className="mt-4 rounded-2xl border border-dashed border-border-strong bg-surface">
-              <button type="button" onClick={() => setShowExpired(v => !v)} aria-expanded={showExpired}
-                className="w-full flex items-center gap-2 px-5 py-3 text-left">
-                <Clock size={14} className="text-txt-tertiary" />
-                <span className="flex-1 text-sm font-semibold text-txt-secondary">
-                  Expired access ({expired.length})
-                  <span className="font-normal text-txt-tertiary"> · these doctors can no longer see these records</span>
-                </span>
-                <ChevronDown size={16} className={`text-txt-tertiary transition-transform ${showExpired ? 'rotate-180' : ''}`} />
-              </button>
-
-              <AnimatePresence initial={false}>
-                {showExpired && (
-                  <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden divide-y divide-border border-t border-border">
-                    {expired.map(share => (
-                      <li key={share.id} className="flex items-center gap-3 px-5 py-3">
-                        <FileText size={16} className="text-txt-tertiary flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-txt-secondary truncate">
-                            {share.recordTitle}
-                            <span className="text-txt-tertiary"> · Dr. {share.doctorName || 'Unknown'}</span>
-                          </p>
-                          <p className="text-[11px] text-txt-tertiary">
-                            Expired {new Date(share.expiresAt).toLocaleString('en-IN', DATE_FORMAT)}
-                          </p>
-                        </div>
-                        <Link to={`/patient/send-records/${share.doctorId}`}
-                          className="text-xs font-semibold text-primary hover:underline flex-shrink-0">
-                          Share again
-                        </Link>
-                        <button type="button" onClick={() => handleClear(share)} disabled={busy === share.id}
-                          aria-label={`Remove ${share.recordTitle} from expired list`}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-txt-tertiary hover:bg-white hover:text-txt-secondary transition-colors disabled:opacity-50 flex-shrink-0">
-                          {busy === share.id ? <Loader size={12} className="animate-spin" /> : <X size={14} />}
-                        </button>
-                      </li>
-                    ))}
-                  </motion.ul>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
+          <p className="mt-3 flex items-center gap-1.5 text-[11px] text-txt-tertiary">
+            <History size={12} /> Access ends automatically at its expiry. Each record's access history shows when.
+          </p>
         </>
       )}
     </motion.section>
