@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1932 1932" width="1932" height="1932">
+  <!-- Full blue background -->
+  <rect width="1932" height="1932" fill="#235BDC"/>
+
+  <!-- White M -->
+  <path fill="#FFFFFF" d="M548 567 H765 L966 1032 L1167 567 H1384 L1468 1365 H1266 L1217 888 L1026 1365 H906 L715 888 L666 1365 H464 Z"/>
+
+  <!-- Blue pin outline cut into the M -->
+  <g fill="#235BDC">
+    <circle cx="966" cy="817" r="135"/>
+    <path d="M922 930 L966 1032 L1010 930 Z"/>
+  </g>
+
+  <!-- White pin center -->
+  <circle cx="966" cy="817" r="98" fill="#FFFFFF"/>
+
+  <!-- Blue medical cross -->
+  <path fill="#235BDC" d="M949 751 H983 A6 6 0 0 1 989 757 V794 H1026 A6 6 0 0 1 1032 800 V834 A6 6 0 0 1 1026 840 H989 V877 A6 6 0 0 1 983 883 H949 A6 6 0 0 1 943 877 V840 H906 A6 6 0 0 1 900 834 V800 A6 6 0 0 1 906 794 H943 V757 A6 6 0 0 1 949 751 Z"/>
+</svg>
